@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.6.0/dist/tf.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+    <title>cell</title>
+    <link rel="stylesheet" href="cellFusion.css" />
+    <style>
+      .canvas-wrapper,
+      #scatter-gl-container {
+        display: inline-block;
+        vertical-align: top;
+      }
+
+      #scatter-gl-container {
+        border: solid 1px black;
+        position: relative;
+      }
+
+      /* center the canvas within its wrapper */
+      #scatter-gl-container canvas {
+        left: 50%;
+        position: absolute;
+        top: 50%;
+        transform: translate3d(-50%, -50%, 0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <div class="container">
+        <div class="canvas-wrapper">
+          <!-- <img id="detectedImg1" src="./models/wg.jpg" alt="" />
+          <img id="detectedImg2" src="./models/tr.jpg" alt="" /> -->
+        </div>
+        <div id="scatter-gl-container"></div>
+        <!-- 細胞融合 -->
+        <!-- <div class="cell-bg">
+          <div class="cell"></div>
+        </div> -->
+        <!-- 融合 -->
+        <div id="parent">
+          <div id="fusion">
+            <div class="left">
+              <!-- <img class="circle-img" src="./models/wg.jpg" alt="" srcset="" /> -->
+            </div>
+            <div class="right">
+              <!-- <img class="circle-img" src="./models/tr.jpg" alt="" srcset="" /> -->
+            </div>
+          </div>
+          <!-- 上層放照片 分開是為了不被fusion的模糊跟對比影響 -->
+          <div id="image-bg">
+            <!-- <img class="circle-img" src="./models/wg.jpg" alt="" srcset="" />
+            <img class="circle-img" src="./models/tr.jpg" alt="" srcset="" /> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+<script>
+  // async function main() {
+  //   var img1 = document.getElementById("detectedImg1");
+  //   var img2 = document.getElementById("detectedImg2");
+
+  //   console.log("loading model");
+  //   const model = await faceLandmarksDetection.load(
+  //     faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
+  //   );
+
+  //   console.log("predicting faces");
+  //   const faces1 = await model.estimateFaces({ input: img1 }, false);
+  //   const faces2 = await model.estimateFaces({ input: img2 }, false);
+  //   return { faces1, faces2 };
+  // }
+  // main().then((data) => {
+  //   console.log(data.faces1);
+  //   console.log(data.faces2);
+  //   const leftCheck = data.faces1[0].annotations.leftCheek;
+  //   console.log(leftCheck);
+  //   let canvas = document.querySelector("#mycanvas");
+  //   let ctx = canvas.getContext("2d");
+  //   canvas.width = document.getElementById("detectedImg2").width;
+  //   canvas.height = document.getElementById("detectedImg2").height;
+  //   drawMesh(data.faces1, ctx);
+  //   drawMesh(data.faces2, ctx);
+  // });
+  //  Triangulation sets of three
+
+  // Triangle drawing method
+  function drawPath(ctx, points, closePath) {
+    const region = new Path2D();
+    debugger;
+    region.moveTo(points[0][0], points[0][1]);
+    // region.moveTo(points[0], points[1]);
+    for (let i = 1; i < points.length; i++) {
+      const point = points[i];
+      region.lineTo(points[i], points[i]);
+    }
+
+    if (closePath) {
+      region.closePath();
+    }
+    ctx.strokeStyle = "grey";
+    ctx.stroke(region);
+  }
+
+  // Drawing Mesh
+  function drawMesh(predictions, ctx) {
+    if (predictions.length > 0) {
+      for (let i = 0; i < predictions.length; i++) {
+        // const keypoints = predictions[i].scaledMesh;
+        const keypoints = predictions[i].annotations;
+
+        // Log facial keypoints.
+        for (let i = 0; i < keypoints.length; i++) {
+          const [x, y, z] = keypoints[i];
+
+          console.log(`Keypoint ${i}: [${x}, ${y}, ${z}]`);
+        }
+      }
+      predictions.forEach((prediction) => {
+        const keypoints = prediction.scaledMesh;
+
+        // const keypoints = prediction.annotations.leftEyeIris;
+        let leftEye = [];
+        // leftEye.push(prediction.annotations.leftEyeIris);
+        // leftEye.push(prediction.annotations.leftEyeLower0);
+        // leftEye.push(prediction.annotations.leftEyeLower1);
+        // leftEye.push(prediction.annotations.leftEyeLower2);
+        // leftEye.push(prediction.annotations.leftEyeLower3);
+        // leftEye.push(prediction.annotations.leftEyeUpper0);
+        // leftEye.push(prediction.annotations.leftEyeUpper1);
+        // leftEye.push(prediction.annotations.leftEyeUpper2);
+
+        // leftEye.push(prediction.annotations.leftEyebrowLower);
+        // leftEye.push(prediction.annotations.leftEyebrowUpper);
+        leftEye.push(prediction.annotations.silhouette);
+
+        //  Draw Triangles
+        // for (let i = 0; i < TRIANGULATION.length / 3; i++) {
+        //   // Get sets of three keypoints for the triangle
+        //   const points = [
+        //     TRIANGULATION[i * 3],
+        //     TRIANGULATION[i * 3 + 1],
+        //     TRIANGULATION[i * 3 + 2],
+        //   ].map((index) => keypoints[index]);
+        //   //  Draw triangle
+        //   drawPath(ctx, points, true);
+        // }
+        // drawPath(ctx, keypoints, true);
+        // Draw Dots
+        console.log(leftEye);
+        console.log(keypoints);
+
+        const region = new Path2D();
+        region.moveTo(leftEye[0][0], leftEye[0][1]);
+        // me 的
+        for (let i = 0; i < leftEye.length; i++) {
+          console.log(leftEye[i]);
+          for (let j = 0; j < leftEye[i].length; j++) {
+            const x = leftEye[i][j][0];
+            const y = leftEye[i][j][1];
+            // 畫點
+            // ctx.beginPath();
+            // ctx.arc(x, y, 2 /* radius */, 0, 3 * Math.PI);
+            // ctx.fillStyle = "#000000";
+            // ctx.fill();
+            // 畫輪廓
+            ctx.beginPath();
+            region.lineTo(x, y);
+          }
+        }
+        region.closePath();
+        ctx.strokeStyle = "#000";
+        ctx.stroke(region);
+        // 原來的
+        // for (let i = 0; i < keypoints.length; i++) {
+        //   const x = keypoints[i][0];
+        //   const y = keypoints[i][1];
+
+        //   ctx.beginPath();
+        //   ctx.arc(x, y, 1 /* radius */, 0, 3 * Math.PI);
+        //   ctx.fillStyle = "#000000";
+        //   ctx.fill();
+        // }
+      });
+    }
+  }
+</script>
